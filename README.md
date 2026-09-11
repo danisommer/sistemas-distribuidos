@@ -15,10 +15,10 @@ acontece.
 | Microsserviço Estoque | Daniel | pronto |
 | Microsserviço Pagamento | Daniel | pronto |
 | Assinatura digital dos eventos | Daniel | pronto |
-| Microsserviço Entrega | dupla | a fazer |
-| Microsserviço Promoções | dupla | a fazer |
-| Consumidores C1 e C2 de promoções | dupla | a fazer |
-| Validação da assinatura | dupla | a fazer |
+| Microsserviço Entrega | Victor | a fazer |
+| Microsserviço Promoções | Victor | a fazer |
+| Consumidores C1 e C2 de promoções | Victor | a fazer |
+| Validação da assinatura | Victor | a fazer |
 | Microsserviço Principal | em dupla | a fazer |
 
 Cada parte a fazer tem o contrato escrito no comentário do próprio arquivo.
