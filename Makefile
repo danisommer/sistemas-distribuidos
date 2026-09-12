@@ -12,7 +12,7 @@ ajuda:
 	@echo "Microsservicos (um por terminal)"
 	@echo "  make estoque         sobe o microsservico Estoque"
 	@echo "  make pagamento       sobe o microsservico Pagamento"
-	@echo "  make principal       sobe o microsservico Principal      (a fazer em dupla)"
+	@echo "  make principal       sobe o microsservico Principal (menu do sistema)"
 	@echo "  make entrega         sobe o microsservico Entrega        (parte da dupla)"
 	@echo "  make promocoes       sobe o microsservico Promocoes      (parte da dupla)"
 	@echo "  make c1              sobe o consumidor C1 de promocoes   (parte da dupla)"

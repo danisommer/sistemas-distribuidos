@@ -12,6 +12,7 @@ acontece.
 
 | Parte | Responsável | Situação |
 |---|---|---|
+| Microsserviço Principal | em dupla | pronto |
 | Microsserviço Estoque | Daniel | pronto |
 | Microsserviço Pagamento | Daniel | pronto |
 | Assinatura digital dos eventos | Daniel | pronto |
@@ -19,7 +20,6 @@ acontece.
 | Microsserviço Promoções | Victor | a fazer |
 | Consumidores C1 e C2 de promoções | Victor | a fazer |
 | Validação da assinatura | Victor | a fazer |
-| Microsserviço Principal | em dupla | a fazer |
 
 Cada parte a fazer tem o contrato escrito no comentário do próprio arquivo.
 O que já está pronto serve de modelo: `cmd/pagamento/main.go` é o esqueleto
@@ -39,10 +39,26 @@ make chaves
 # 3. um microsserviço por terminal
 make estoque
 make pagamento
+
+# 4. o menu, no seu próprio terminal
+make principal
 ```
 
-Enquanto o Principal não existe, dá para exercitar o fluxo com duas
-ferramentas de desenvolvimento:
+O Principal é a interface do sistema. Ele mostra a vitrine, monta o pedido,
+publica `pedido.criado` e vai imprimindo as mudanças de status conforme os
+eventos de resposta chegam:
+
+```
+  >> PED-3f9a1c → estoque reservado (itens reservados, seguindo para o pagamento)
+  >> PED-3f9a1c → pagamento aprovado (transação TX-9b2e4f, R$ 9.000,00)
+```
+
+O log do broker no Principal não vai para a tela, senão brigaria com o menu.
+Ele fica em `principal.log`. Para acompanhar o tráfego ao vivo, abra outro
+terminal e rode `tail -f principal.log`.
+
+Duas ferramentas de desenvolvimento ajudam a testar partes isoladas, sem
+passar pelo menu:
 
 ```bash
 # acompanha todos os eventos da exchange eCommerce
@@ -205,7 +221,7 @@ de verdade isso nunca se faz.
 
 ```
 cmd/
-  principal/        microsserviço Principal        (a fazer em dupla)
+  principal/        microsserviço Principal        ✓
   estoque/          microsserviço Estoque          ✓
   pagamento/        microsserviço Pagamento        ✓
   entrega/          microsserviço Entrega          (dupla)
@@ -220,6 +236,7 @@ internal/
   cripto/           chaves, assinatura, validação
   mensageria/       conexão, publicador, consumidor
   catalogo/         lista fixa de produtos
+  principal/        menu de terminal e registro de pedidos
   estoque/          regra de negócio do Estoque
   pagamento/        regra de negócio do Pagamento
 ```

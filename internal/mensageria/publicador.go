@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -66,7 +65,7 @@ func (p *Publicador) Publicar(ctx context.Context, exchange, routingKey string, 
 		return fmt.Errorf("publicando %s em %s: %w", routingKey, exchange, err)
 	}
 
-	log.Printf("→ publicado %s (evento %s, assinado por %s)", routingKey, env.ID, p.chaveiro.Servico)
+	registro.Printf("→ publicado %s (evento %s, assinado por %s)", routingKey, env.ID, p.chaveiro.Servico)
 	return nil
 }
 

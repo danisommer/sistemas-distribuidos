@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -73,7 +72,7 @@ func NovoConsumidor(conexao *Conexao, fila string, chaveiro *cripto.Chaveiro) (*
 	}
 
 	if !c.verificar {
-		log.Printf("ATENÇÃO: VERIFICAR_ASSINATURA=off — a fila %s vai aceitar eventos sem validar a assinatura", fila)
+		registro.Printf("ATENÇÃO: VERIFICAR_ASSINATURA=off — a fila %s vai aceitar eventos sem validar a assinatura", fila)
 	}
 
 	return c, nil
@@ -96,7 +95,7 @@ func (c *Consumidor) Vincular(exchange string, chaves ...string) error {
 		if err != nil {
 			return fmt.Errorf("vinculando fila %s a %s com a chave %s: %w", c.fila, exchange, chave, err)
 		}
-		log.Printf("fila %s vinculada a %s com a binding key %q", c.fila, exchange, chave)
+		registro.Printf("fila %s vinculada a %s com a binding key %q", c.fila, exchange, chave)
 	}
 	return nil
 }
@@ -117,7 +116,7 @@ func (c *Consumidor) Consumir(ctx context.Context, tratar Tratador) error {
 		return fmt.Errorf("consumindo a fila %s: %w", c.fila, err)
 	}
 
-	log.Printf("aguardando eventos na fila %s", c.fila)
+	registro.Printf("aguardando eventos na fila %s", c.fila)
 
 	for {
 		select {
@@ -136,7 +135,7 @@ func (c *Consumidor) Consumir(ctx context.Context, tratar Tratador) error {
 func (c *Consumidor) processar(ctx context.Context, entrega amqp.Delivery, tratar Tratador) {
 	var env evento.Envelope
 	if err := json.Unmarshal(entrega.Body, &env); err != nil {
-		log.Printf("✗ mensagem ilegível na fila %s, DESCARTADA: %v", c.fila, err)
+		registro.Printf("✗ mensagem ilegível na fila %s, DESCARTADA: %v", c.fila, err)
 		entrega.Nack(false, false)
 		return
 	}
@@ -144,20 +143,20 @@ func (c *Consumidor) processar(ctx context.Context, entrega amqp.Delivery, trata
 	if c.verificar {
 		if err := cripto.VerificarEnvelope(c.chaveiro, env); err != nil {
 			if errors.Is(err, cripto.ErrNaoImplementado) {
-				log.Printf("✗ evento %s DESCARTADO: %v", env.Tipo, err)
-				log.Printf("  (para testar sem validação enquanto isso: VERIFICAR_ASSINATURA=off)")
+				registro.Printf("✗ evento %s DESCARTADO: %v", env.Tipo, err)
+				registro.Printf("  (para testar sem validação enquanto isso: VERIFICAR_ASSINATURA=off)")
 			} else {
-				log.Printf("✗ assinatura inválida no evento %s vindo de %q, DESCARTADO: %v", env.Tipo, env.Produtor, err)
+				registro.Printf("✗ assinatura inválida no evento %s vindo de %q, DESCARTADO: %v", env.Tipo, env.Produtor, err)
 			}
 			entrega.Nack(false, false)
 			return
 		}
 	}
 
-	log.Printf("← recebido %s (evento %s, produtor %s)", env.Tipo, env.ID, env.Produtor)
+	registro.Printf("← recebido %s (evento %s, produtor %s)", env.Tipo, env.ID, env.Produtor)
 
 	if err := tratar(ctx, env); err != nil {
-		log.Printf("✗ erro tratando %s (evento %s): %v", env.Tipo, env.ID, err)
+		registro.Printf("✗ erro tratando %s (evento %s): %v", env.Tipo, env.ID, err)
 		entrega.Nack(false, false)
 		return
 	}

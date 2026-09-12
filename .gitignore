@@ -5,3 +5,6 @@
 # As chaves ficam versionadas de propósito: a dupla precisa das mesmas chaves
 # nas duas máquinas para os eventos assinados de um lado serem validados do
 # outro. Em sistema de verdade, chave privada nunca vai para o repositório.
+
+# log da mensageria gerado pelo microsservico Principal
+principal.log

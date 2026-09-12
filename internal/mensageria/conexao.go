@@ -5,7 +5,6 @@ package mensageria
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -59,7 +58,7 @@ func Conectar(url string) (*Conexao, error) {
 		}
 
 		ultimoErro = err
-		log.Printf("broker indisponível (tentativa %d/%d): %v", i, tentativas, err)
+		registro.Printf("broker indisponível (tentativa %d/%d): %v", i, tentativas, err)
 		time.Sleep(intervalo)
 	}
 
