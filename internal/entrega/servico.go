@@ -24,15 +24,15 @@ var TRANSPORTADORAS_DISPONIVEIS = map[string]string{
 	"Correios":                "CR",
 }
 
-type Publicador interface {
+type publicador interface {
 	PublicarECommerce(ctx context.Context, routingKey string, dados any) error
 }
 
 type Servico struct {
-	publicador Publicador
+	publicador publicador
 }
 
-func NovoServico(publicador Publicador) *Servico {
+func NovoServico(publicador publicador) *Servico {
 	return &Servico{publicador}
 }
 
@@ -47,7 +47,7 @@ func (s *Servico) Tratar(ctx context.Context, env evento.Envelope) error {
 		return fmt.Errorf("Falha ao lidar com evento de PagamentoAprovado. %w", err)
 	}
 
-	pedidoEnviadoDados := s.processarEntrega(ctx, payload)
+	pedidoEnviadoDados := s.ProcessarEntrega(ctx, payload)
 
 	if err := s.publicador.PublicarECommerce(ctx, evento.PedidoEnviado, pedidoEnviadoDados); err != nil {
 		return fmt.Errorf("Falha ao lidar com evento de PagamentoAprovado. Não foi possível publicar a mensagem no broker. %w", err)
@@ -56,7 +56,7 @@ func (s *Servico) Tratar(ctx context.Context, env evento.Envelope) error {
 	return nil
 }
 
-func (s *Servico) processarEntrega(ctx context.Context, payload evento.DadosPagamentoAprovado) *evento.DadosPedidoEnviado {
+func (s *Servico) ProcessarEntrega(ctx context.Context, payload evento.DadosPagamentoAprovado) *evento.DadosPedidoEnviado {
 	s.simularProcessamento(ctx, payload)
 
 	notaFiscal := s.obterNotaFiscal()
@@ -73,7 +73,9 @@ func (s *Servico) processarEntrega(ctx context.Context, payload evento.DadosPaga
 func (*Servico) simularProcessamento(ctx context.Context, payload evento.DadosPagamentoAprovado) {
 	log.Printf("Processando entrega para o pedido %s\n", payload.PedidoID)
 
-	processamento_duracao := time.Duration(rand.Int64N(TEMPO_PROCESSAMENTO_MAX_MS-TEMPO_PROCESSAMENTO_MIN_MS) + TEMPO_PROCESSAMENTO_MIN_MS)
+	faixa := (TEMPO_PROCESSAMENTO_MIN_MS + rand.IntN(TEMPO_PROCESSAMENTO_MAX_MS-TEMPO_PROCESSAMENTO_MIN_MS))
+
+	processamento_duracao := time.Duration(faixa) * time.Millisecond
 	timer := time.NewTimer(processamento_duracao)
 
 	defer timer.Stop()
@@ -88,12 +90,12 @@ func (*Servico) simularProcessamento(ctx context.Context, payload evento.DadosPa
 }
 
 func (s *Servico) obterNotaFiscal() string {
-	return string(rand.IntN(899_999_999) + 100_000_000)
+	return fmt.Sprint(rand.IntN(899_999_999) + 100_000_000)
 }
 
 func (s *Servico) obterTransportadoraECodigoRastreio() (string, string) {
 	transportadora := slices.Collect(maps.Keys(TRANSPORTADORAS_DISPONIVEIS))[rand.IntN(len(TRANSPORTADORAS_DISPONIVEIS))]
-	codigo := string(rand.IntN(899_999_999) + 100_000_000)
+	codigo := rand.IntN(899_999_999) + 100_000_000
 	codigo_rastreio := fmt.Sprintf("%s%d%s", TRANSPORTADORAS_DISPONIVEIS[transportadora], codigo, CODIGO_RASTREIO_SUFIXO)
 
 	return transportadora, codigo_rastreio
