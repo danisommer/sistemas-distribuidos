@@ -1,6 +1,5 @@
-// Comando teste-publicador é uma FERRAMENTA DE DESENVOLVIMENTO, não faz
-// parte da entrega. Ele publica eventos assinados na mão, para testar o
-// Estoque e o Pagamento enquanto o microsserviço Principal não existe.
+// Comando teste-publicador é uma ferramenta de desenvolvimento: publica
+// eventos assinados na mão para testar o Estoque e o Pagamento.
 //
 // Exemplos:
 //
@@ -121,8 +120,6 @@ func montarItens(bruto string) ([]evento.ItemPedido, float64, error) {
 		id = strings.TrimSpace(id)
 		produto, existe := catalogo.Buscar(id)
 		if !existe {
-			// Deixa passar de propósito: é assim que se testa o caminho de
-			// produto inexistente no Estoque.
 			log.Printf("aviso: %s não está no catálogo, publicando mesmo assim", id)
 			itens = append(itens, evento.ItemPedido{ProdutoID: id, Quantidade: quantidade})
 			continue

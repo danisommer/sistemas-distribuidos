@@ -6,9 +6,6 @@
 // Publica pedido.criado e pedido.excluido na exchange eCommerce. Consome
 // pedido.estoque_ok, estoque.indisponivel, pagamento.aprovado,
 // pagamento.recusado e pedido.enviado, atualizando o status dos pedidos.
-//
-// O menu roda na goroutine principal e o consumidor em paralelo, então as
-// mudanças de status aparecem na tela sozinhas, sem o usuário pedir.
 package main
 
 import (
@@ -25,9 +22,7 @@ import (
 	"ecommerce/internal/principal"
 )
 
-// arquivoDeLog recebe o log da camada de mensageria. Ele não vai para a tela
-// porque brigaria com o menu; para acompanhar o tráfego do broker ao vivo,
-// abra outro terminal e rode: tail -f principal.log
+// arquivoDeLog recebe o log da camada de mensageria.
 const arquivoDeLog = "principal.log"
 
 func main() {
@@ -74,8 +69,6 @@ func executar(ctx context.Context) error {
 		return err
 	}
 
-	// Exchange direct: uma binding key por evento que interessa, todas na
-	// mesma fila do Principal.
 	err = consumidor.Vincular(evento.ExchangeECommerce,
 		evento.PedidoEstoqueOK,
 		evento.EstoqueIndisponivel,
@@ -96,9 +89,6 @@ func executar(ctx context.Context) error {
 		}
 	}()
 
-	// Ctrl+C chega enquanto o menu está parado lendo o teclado, e não dá
-	// para interromper essa leitura. Encerrar o processo aqui é o caminho
-	// curto; as filas são duráveis, então nada se perde.
 	go func() {
 		<-ctx.Done()
 		fmt.Println("\nencerrando.")

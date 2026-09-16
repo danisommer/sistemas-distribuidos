@@ -19,9 +19,7 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Publicador é o pedaço da mensageria que o Pagamento usa. Depender da
-// interface, e não de *mensageria.Publicador, deixa o serviço ser testado
-// sem subir broker nenhum.
+// Publicador é o pedaço da mensageria que o Pagamento usa.
 type Publicador interface {
 	PublicarECommerce(ctx context.Context, routingKey string, dados any) error
 }
@@ -48,23 +46,16 @@ var motivosRecusa = []string{
 type Servico struct {
 	mu sync.Mutex
 
-	// processados evita cobrar duas vezes o mesmo pedido se o broker
-	// reentregar uma mensagem cujo ack se perdeu.
-	processados map[string]string
-
+	processados   map[string]string
 	taxaAprovacao float64
-
-	// Faixa do atraso simulado. São campos, e não constantes, para os
-	// testes poderem zerar a espera.
-	atrasoMinimo time.Duration
-	atrasoMaximo time.Duration
+	atrasoMinimo  time.Duration
+	atrasoMaximo  time.Duration
 
 	publicador Publicador
 }
 
 // NovoServico monta o serviço. A taxa de aprovação pode ser ajustada pela
-// variável de ambiente TAXA_APROVACAO, útil para a defesa: com 0 todo
-// pagamento é recusado e dá para mostrar o estorno do estoque na hora.
+// variável de ambiente TAXA_APROVACAO, entre 0 e 1.
 func NovoServico(publicador Publicador) *Servico {
 	taxa := taxaAprovacaoPadrao
 	if bruto := os.Getenv("TAXA_APROVACAO"); bruto != "" {
@@ -106,7 +97,6 @@ func (s *Servico) Tratar(ctx context.Context, env evento.Envelope) error {
 	log.Printf("processando pagamento do pedido %s no valor de R$ %.2f", pedido.PedidoID, pedido.Total)
 	s.simularComunicacaoComOperadora(ctx)
 
-	// O enunciado pede que a aprovação seja decidida por variável aleatória.
 	if mrand.Float64() < s.taxaAprovacao {
 		return s.aprovar(ctx, pedido)
 	}
@@ -141,7 +131,7 @@ func (s *Servico) recusar(ctx context.Context, pedido evento.DadosPedidoEstoqueO
 }
 
 // simularComunicacaoComOperadora segura o processamento por um tempo
-// aleatório, só para o fluxo não parecer instantâneo na demonstração.
+// aleatório entre atrasoMinimo e atrasoMaximo.
 func (s *Servico) simularComunicacaoComOperadora(ctx context.Context) {
 	faixa := s.atrasoMaximo - s.atrasoMinimo
 	if faixa <= 0 {

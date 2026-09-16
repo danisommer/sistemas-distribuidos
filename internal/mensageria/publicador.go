@@ -14,9 +14,6 @@ import (
 
 // Publicador publica eventos na exchange, sempre assinados com a chave
 // privada do microsserviço dono do chaveiro.
-//
-// Nenhum microsserviço publica sem passar por aqui, então não existe caminho
-// pelo qual um evento saia sem assinatura.
 type Publicador struct {
 	canal    *amqp.Channel
 	chaveiro *cripto.Chaveiro
@@ -27,10 +24,7 @@ func NovoPublicador(conexao *Conexao, chaveiro *cripto.Chaveiro) *Publicador {
 	return &Publicador{canal: conexao.Canal, chaveiro: chaveiro}
 }
 
-// Publicar monta o envelope, assina e envia.
-//
-// A mensagem vai como persistente e a exchange é durable, então um pedido em
-// trânsito sobrevive a uma queda do broker (tutorial 2).
+// Publicar monta o envelope, assina e envia como mensagem persistente.
 func (p *Publicador) Publicar(ctx context.Context, exchange, routingKey string, dados any) error {
 	env, err := evento.NovoEnvelope(routingKey, p.chaveiro.Servico, dados)
 	if err != nil {

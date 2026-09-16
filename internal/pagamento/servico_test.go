@@ -22,7 +22,7 @@ func (p *publicadorFalso) PublicarECommerce(_ context.Context, chave string, dad
 }
 
 // montar cria o serviço com a taxa de aprovação fixada e sem o atraso
-// simulado, para o teste ser determinístico e rápido.
+// simulado.
 func montar(t *testing.T, taxa string) (*Servico, *publicadorFalso) {
 	t.Helper()
 	t.Setenv("TAXA_APROVACAO", taxa)
@@ -57,8 +57,6 @@ func tratar(t *testing.T, s *Servico, env evento.Envelope) {
 func TestTaxaUmAprovaSempre(t *testing.T) {
 	s, pub := montar(t, "1")
 
-	// Várias rodadas porque a decisão é sorteada: uma só poderia passar por
-	// sorte.
 	for i := 0; i < 20; i++ {
 		tratar(t, s, estoqueOK(t, "PED-"+string(rune('a'+i)), 100))
 	}
@@ -105,7 +103,6 @@ func TestPagamentoAprovadoLevaValorEItens(t *testing.T) {
 	if dados.TransacaoID == "" {
 		t.Fatal("pagamento aprovado sem identificador de transação")
 	}
-	// A Entrega precisa dos itens para emitir a nota.
 	if len(dados.Itens) != 1 {
 		t.Fatalf("esperava 1 item repassado à Entrega, vieram %d", len(dados.Itens))
 	}
@@ -125,8 +122,6 @@ func TestPagamentoRecusadoLevaMotivo(t *testing.T) {
 	}
 }
 
-// O broker reentrega uma mensagem cujo ack se perdeu. Cobrar duas vezes o
-// mesmo pedido é o pior erro possível aqui.
 func TestReentregaNaoCobraDuasVezes(t *testing.T) {
 	s, pub := montar(t, "1")
 

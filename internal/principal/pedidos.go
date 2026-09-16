@@ -17,15 +17,12 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Publicador é o pedaço da mensageria que o Principal usa. Depender da
-// interface deixa o serviço ser testado sem subir broker nenhum.
+// Publicador é o pedaço da mensageria que o Principal usa.
 type Publicador interface {
 	PublicarECommerce(ctx context.Context, routingKey string, dados any) error
 }
 
-// Status é o estágio em que um pedido está. O Principal nunca decide um
-// status sozinho: cada um destes vem de um evento publicado por outro
-// microsserviço, menos o inicial e o cancelamento pelo usuário.
+// Status é o estágio em que um pedido está.
 type Status string
 
 const (
@@ -66,9 +63,8 @@ type Marca struct {
 	Detalhe string
 }
 
-// Pedido é o que o Principal sabe sobre um pedido. É a visão dele, montada a
-// partir dos eventos que chegam; o estoque de verdade é do microsserviço
-// Estoque e o pagamento é do Pagamento.
+// Pedido é a visão do Principal sobre um pedido, montada a partir dos eventos
+// que chegam.
 type Pedido struct {
 	ID        string
 	Cliente   string
@@ -80,11 +76,8 @@ type Pedido struct {
 	Historico []Marca
 }
 
-// Registro guarda os pedidos da sessão em memória.
-//
-// É lido e escrito por duas goroutines ao mesmo tempo: o menu, que cria e
-// exclui pedidos, e o consumidor, que atualiza status conforme os eventos
-// chegam. Daí o mutex.
+// Registro guarda os pedidos da sessão em memória e é seguro para uso
+// concorrente.
 type Registro struct {
 	mu      sync.RWMutex
 	pedidos map[string]*Pedido
@@ -119,11 +112,8 @@ func (r *Registro) Criar(cliente string, itens []evento.ItemPedido) Pedido {
 	return *pedido
 }
 
-// Atualizar move o pedido para um novo status e guarda o histórico.
-//
-// Devolve falso se o pedido não existe. Isso acontece de verdade: se o
-// Principal for reiniciado, a fila dele ainda tem eventos de pedidos que a
-// memória desta sessão não conhece.
+// Atualizar move o pedido para um novo status e guarda o histórico. Devolve
+// falso se o pedido não existe.
 func (r *Registro) Atualizar(pedidoID string, status Status, detalhe string) (Pedido, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -156,9 +146,6 @@ func (r *Registro) Buscar(pedidoID string) (Pedido, bool) {
 }
 
 // Listar devolve cópias de todos os pedidos, na ordem em que foram criados.
-//
-// São cópias de propósito: quem chama fica livre para percorrer a lista sem
-// segurar o mutex enquanto o consumidor atualiza status em paralelo.
 func (r *Registro) Listar() []Pedido {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -187,13 +174,7 @@ func totalDe(itens []evento.ItemPedido) float64 {
 	return total
 }
 
-// novoIDPedido gera um identificador curto e único.
-//
-// Não é um contador simples de propósito: reiniciar o Principal zeraria o
-// contador e um PED-001 novo colidiria com o PED-001 que o Estoque ainda tem
-// reservado, e aí o pedido novo seria tratado como reentrega do antigo. No
-// menu os pedidos são escolhidos pelo número da linha, então ninguém precisa
-// digitar isto.
+// novoIDPedido gera um identificador curto e aleatório.
 func novoIDPedido() string {
 	b := make([]byte, 3)
 	if _, err := rand.Read(b); err != nil {

@@ -14,14 +14,10 @@ import (
 )
 
 // Tratador processa um evento já validado. Devolver erro faz a mensagem ser
-// descartada com log, em vez de voltar para a fila: reprocessar em laço um
-// evento malformado só entope o broker.
+// descartada com log, sem voltar para a fila.
 type Tratador func(ctx context.Context, env evento.Envelope) error
 
 // Consumidor é a fila própria de um microsserviço mais o laço que lê dela.
-//
-// Cada consumidor tem a sua fila, como pede o enunciado, e as bindings dizem
-// quais routing keys aquela fila recebe.
 type Consumidor struct {
 	canal     *amqp.Channel
 	fila      string
@@ -30,20 +26,14 @@ type Consumidor struct {
 }
 
 // VerificacaoAtiva diz se a assinatura dos eventos recebidos deve ser
-// validada. O padrão é sim.
-//
-// Só existe para destravar o desenvolvimento enquanto internal/cripto/
-// verificar.go ainda é um stub. Na entrega e na defesa, deixe ligado.
+// validada, lendo VERIFICAR_ASSINATURA. O padrão é sim.
 func VerificacaoAtiva() bool {
 	valor := strings.ToLower(strings.TrimSpace(os.Getenv("VERIFICAR_ASSINATURA")))
 	return valor != "off" && valor != "0" && valor != "false" && valor != "nao"
 }
 
-// NovoConsumidor declara a fila do microsserviço e prepara o laço de leitura.
-//
-// A fila é durable e as mensagens são confirmadas na mão (ack), então um
-// evento em processamento quando o serviço cai volta para a fila e é
-// entregue de novo quando ele sobe (tutorial 2).
+// NovoConsumidor declara a fila durable do microsserviço, com prefetch de uma
+// mensagem por vez, e prepara o laço de leitura.
 func NovoConsumidor(conexao *Conexao, fila string, chaveiro *cripto.Chaveiro) (*Consumidor, error) {
 	_, err := conexao.Canal.QueueDeclare(
 		fila,
@@ -57,8 +47,6 @@ func NovoConsumidor(conexao *Conexao, fila string, chaveiro *cripto.Chaveiro) (*
 		return nil, fmt.Errorf("declarando fila %s: %w", fila, err)
 	}
 
-	// Entrega uma mensagem por vez: o broker só manda a próxima depois do
-	// ack da anterior.
 	if err := conexao.Canal.Qos(1, 0, false); err != nil {
 		return nil, fmt.Errorf("configurando prefetch da fila %s: %w", fila, err)
 	}
@@ -77,11 +65,7 @@ func NovoConsumidor(conexao *Conexao, fila string, chaveiro *cripto.Chaveiro) (*
 	return c, nil
 }
 
-// Vincular liga a fila a uma ou mais routing keys de uma exchange.
-//
-// Na exchange direct a binding key tem de ser igual à routing key. Na topic
-// ela pode usar * e #, que é como o consumidor C2 assina todas as categorias
-// de promoção com uma binding só.
+// Vincular liga a fila a uma ou mais binding keys de uma exchange.
 func (c *Consumidor) Vincular(exchange string, chaves ...string) error {
 	for _, chave := range chaves {
 		err := c.canal.QueueBind(
@@ -104,8 +88,8 @@ func (c *Consumidor) Vincular(exchange string, chaves ...string) error {
 func (c *Consumidor) Consumir(ctx context.Context, tratar Tratador) error {
 	entregas, err := c.canal.Consume(
 		c.fila,
-		"",    // consumer tag gerada pelo servidor
-		false, // auto-ack desligado: confirmamos na mão
+		"",    // consumer tag
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait

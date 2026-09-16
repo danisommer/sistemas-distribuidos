@@ -82,7 +82,6 @@ func TestEstoqueOKMarcaReservadoENaoCancela(t *testing.T) {
 	}
 }
 
-// Um dos dois caminhos de cancelamento exigidos pelo enunciado.
 func TestEstoqueIndisponivelCancelaEPublicaPedidoExcluido(t *testing.T) {
 	s, registro, pub := montarServico(t)
 	id := pedidoNoRegistro(t, registro)
@@ -122,8 +121,6 @@ func TestPagamentoAprovadoMarcaAprovadoENaoCancela(t *testing.T) {
 	}
 }
 
-// O outro caminho de cancelamento. É este evento que faz o Estoque devolver
-// o que estava reservado, então deixar de publicar prenderia estoque.
 func TestPagamentoRecusadoCancelaEPublicaPedidoExcluido(t *testing.T) {
 	s, registro, pub := montarServico(t)
 	id := pedidoNoRegistro(t, registro)
@@ -157,9 +154,6 @@ func TestPedidoEnviadoMarcaEnviado(t *testing.T) {
 	}
 }
 
-// Se o Principal for reiniciado, a fila dele ainda tem eventos de pedidos
-// que a memória desta sessão não conhece. O cancelamento tem de sair mesmo
-// assim, senão o Estoque fica com a reserva presa para sempre.
 func TestPedidoDesconhecidoAindaAssimPublicaExclusao(t *testing.T) {
 	s, _, pub := montarServico(t)
 
@@ -211,9 +205,6 @@ func TestHistoricoGuardaACadeiaDeStatus(t *testing.T) {
 	}
 }
 
-// Listar devolve cópias, então mexer no que voltou não pode alterar o
-// registro. O menu percorre essa lista sem segurar o mutex enquanto o
-// consumidor atualiza status em paralelo.
 func TestListarDevolveCopias(t *testing.T) {
 	registro := NovoRegistro()
 	id := pedidoNoRegistro(t, registro)

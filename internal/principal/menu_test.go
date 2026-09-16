@@ -10,9 +10,7 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// rodarMenu roteiriza o teclado e devolve o que apareceu na tela. O menu
-// recebe entrada e saída por interface justamente para isto: dá para testar
-// o fluxo inteiro do terminal sem ninguém digitando.
+// rodarMenu roteiriza o teclado e devolve o que apareceu na tela.
 func rodarMenu(t *testing.T, teclado string) (*Registro, *publicadorFalso, string) {
 	t.Helper()
 
@@ -28,7 +26,6 @@ func rodarMenu(t *testing.T, teclado string) (*Registro, *publicadorFalso, strin
 }
 
 func TestMenuRealizaPedidoEPublicaPedidoCriado(t *testing.T) {
-	// nome, opção 2, produto 1, quantidade 2, fecha a lista, confirma, sai
 	registro, pub, _ := rodarMenu(t, "Daniel\n2\n1\n2\n\ns\n0\n")
 
 	if len(pub.publicados) != 1 || pub.publicados[0].chave != evento.PedidoCriado {
@@ -45,7 +42,6 @@ func TestMenuRealizaPedidoEPublicaPedidoCriado(t *testing.T) {
 	if len(dados.Itens) != 1 || dados.Itens[0].ProdutoID != "P001" || dados.Itens[0].Quantidade != 2 {
 		t.Fatalf("itens errados: %+v", dados.Itens)
 	}
-	// P001 custa 4500.
 	if dados.Total != 9000 {
 		t.Fatalf("total errado: %v", dados.Total)
 	}
@@ -64,8 +60,6 @@ func TestMenuAceitaCodigoDoProdutoAlemDoNumero(t *testing.T) {
 	}
 }
 
-// O mesmo produto escolhido duas vezes vira uma linha só com a soma, em vez
-// de duas linhas que o Estoque teria de agregar.
 func TestMenuSomaOMesmoProdutoEscolhidoDuasVezes(t *testing.T) {
 	_, pub, _ := rodarMenu(t, "Daniel\n2\n1\n2\n1\n3\n\ns\n0\n")
 
@@ -98,7 +92,6 @@ func TestMenuNaoPublicaPedidoVazio(t *testing.T) {
 }
 
 func TestMenuRejeitaQuantidadeInvalida(t *testing.T) {
-	// quantidade 0 é recusada, depois o usuário desiste e sai
 	_, pub, tela := rodarMenu(t, "Daniel\n2\n1\n0\n\n0\n")
 
 	if len(pub.publicados) != 0 {
@@ -110,7 +103,6 @@ func TestMenuRejeitaQuantidadeInvalida(t *testing.T) {
 }
 
 func TestMenuExcluiPedidoEPublicaPedidoExcluido(t *testing.T) {
-	// cria um pedido, depois opção 3, pedido 1, confirma, sai
 	registro, pub, _ := rodarMenu(t, "Daniel\n2\n1\n1\n\ns\n3\n1\ns\n0\n")
 
 	if len(pub.publicados) != 2 {
@@ -126,7 +118,6 @@ func TestMenuExcluiPedidoEPublicaPedidoExcluido(t *testing.T) {
 	}
 }
 
-// Um pedido já enviado não pode ser excluído: a mercadoria saiu.
 func TestMenuRecusaExcluirPedidoJaEncerrado(t *testing.T) {
 	registro := NovoRegistro()
 	pub := &publicadorFalso{}
@@ -161,7 +152,6 @@ func TestMenuListaOsProdutos(t *testing.T) {
 }
 
 func TestMenuMostraStatusNaConsulta(t *testing.T) {
-	// cria o pedido e depois consulta
 	_, _, tela := rodarMenu(t, "Daniel\n2\n1\n1\n\ns\n4\n\n0\n")
 
 	if !strings.Contains(tela, string(StatusAguardandoEstoque)) {
@@ -169,8 +159,6 @@ func TestMenuMostraStatusNaConsulta(t *testing.T) {
 	}
 }
 
-// A entrada acabando no meio do fluxo encerra o menu sem travar e sem
-// publicar nada pela metade.
 func TestMenuEncerraQuandoAEntradaAcaba(t *testing.T) {
 	_, pub, _ := rodarMenu(t, "Daniel\n2\n1\n")
 
@@ -179,8 +167,6 @@ func TestMenuEncerraQuandoAEntradaAcaba(t *testing.T) {
 	}
 }
 
-// As colunas das tabelas têm de bater mesmo com acento, que ocupa dois bytes
-// em UTF-8 e engana o %-22s do fmt.
 func TestColunasAlinhamComAcento(t *testing.T) {
 	_, _, tela := rodarMenu(t, "Daniel\n1\n0\n")
 
@@ -210,7 +196,6 @@ func TestPreencherContaCaracteresENaoBytes(t *testing.T) {
 		}
 	}
 
-	// Texto maior que a largura não é cortado.
 	longo := strings.Repeat("a", 30)
 	if preencher(longo, 22) != longo {
 		t.Error("preencher não deveria cortar texto maior que a largura")

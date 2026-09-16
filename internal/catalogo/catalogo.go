@@ -1,13 +1,8 @@
 // Package catalogo guarda a lista fixa de produtos vendidos pela loja.
-//
-// É um dado estático compartilhado, equivalente a um arquivo de configuração
-// que cada processo lê na inicialização. Não é uma chamada entre processos: o
-// Estoque usa o catálogo para iniciar as quantidades e o Principal usa para
-// montar a vitrine, sem que um fale com o outro.
 package catalogo
 
 // Produto é uma linha do catálogo. QuantidadeInicial só vale na partida do
-// microsserviço Estoque, que a partir daí mantém o saldo em memória.
+// microsserviço Estoque.
 type Produto struct {
 	ID                string
 	Nome              string

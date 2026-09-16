@@ -7,20 +7,13 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Servico reage aos eventos que chegam na fila do Principal.
-//
-// Ele faz duas coisas: atualiza o status do pedido e, nos dois caminhos de
-// cancelamento previstos no enunciado (estoque indisponível e pagamento
-// recusado), publica pedido.excluido para o Estoque devolver o que tiver
-// reservado.
+// Servico reage aos eventos que chegam na fila do Principal: atualiza o status
+// do pedido e, em estoque indisponível ou pagamento recusado, publica
+// pedido.excluido.
 type Servico struct {
 	registro   *Registro
 	publicador Publicador
-
-	// avisar imprime a mudança no terminal do usuário. É injetado porque o
-	// serviço não deve saber como o menu desenha a tela, e porque em teste
-	// ele vira uma função que só coleta as mensagens.
-	avisar func(texto string)
+	avisar     func(texto string)
 }
 
 // NovoServico monta o tratador de eventos.
@@ -81,8 +74,7 @@ func (s *Servico) aoPagamentoAprovado(env evento.Envelope) error {
 	return nil
 }
 
-// aoPagamentoRecusado cancela o pedido e publica pedido.excluido. É este
-// evento que faz o Estoque devolver o que havia reservado.
+// aoPagamentoRecusado cancela o pedido e publica pedido.excluido.
 func (s *Servico) aoPagamentoRecusado(ctx context.Context, env evento.Envelope) error {
 	var dados evento.DadosPagamentoRecusado
 	if err := env.DecodificarDados(&dados); err != nil {
@@ -104,10 +96,8 @@ func (s *Servico) aoPedidoEnviado(env evento.Envelope) error {
 	return nil
 }
 
-// mudarStatus atualiza o pedido e avisa o usuário.
-//
-// Um pedido desconhecido não é erro: se o Principal foi reiniciado, a fila
-// dele ainda guarda eventos de pedidos que esta sessão nunca viu.
+// mudarStatus atualiza o pedido e avisa o usuário. Pedido desconhecido só
+// gera aviso, não erro.
 func (s *Servico) mudarStatus(pedidoID string, status Status, detalhe string) {
 	if _, existe := s.registro.Atualizar(pedidoID, status, detalhe); !existe {
 		s.avisar(fmt.Sprintf("evento para o pedido %s, que não é desta sessão", pedidoID))
@@ -121,11 +111,8 @@ func (s *Servico) mudarStatus(pedidoID string, status Status, detalhe string) {
 	s.avisar(texto)
 }
 
-// excluir publica pedido.excluido.
-//
-// Publica mesmo para pedido que esta sessão não conhece, porque quem precisa
-// do evento é o Estoque, para soltar a reserva. Deixar de publicar por causa
-// da memória local do Principal seguraria estoque preso.
+// excluir publica pedido.excluido, mesmo para pedido que esta sessão não
+// conhece.
 func (s *Servico) excluir(ctx context.Context, pedidoID, motivo string) error {
 	return s.publicador.PublicarECommerce(ctx, evento.PedidoExcluido, evento.DadosPedidoExcluido{
 		PedidoID: pedidoID,

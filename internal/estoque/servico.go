@@ -16,27 +16,17 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Publicador é o pedaço da mensageria que o Estoque usa. Depender da
-// interface, e não de *mensageria.Publicador, deixa o serviço ser testado
-// sem subir broker nenhum.
+// Publicador é o pedaço da mensageria que o Estoque usa.
 type Publicador interface {
 	PublicarECommerce(ctx context.Context, routingKey string, dados any) error
 }
 
-// Servico guarda o saldo de cada produto e o que está reservado por pedido.
-//
-// O estado vive em memória: o trabalho não pede banco de dados, e manter as
-// quantidades aqui deixa claro que cada microsserviço é dono dos seus dados.
+// Servico guarda, em memória, o saldo de cada produto e o que está reservado
+// por pedido.
 type Servico struct {
 	mu sync.Mutex
 
-	// saldo é a quantidade disponível de cada produto, por ID.
-	saldo map[string]int
-
-	// reservas guarda o que foi baixado por pedido, para conseguir devolver
-	// exatamente aquilo se o pedido for excluído depois. Sem isso não dá
-	// para saber se um pedido.excluido merece estorno: um pedido cancelado
-	// por falta de estoque nunca chegou a reservar nada.
+	saldo    map[string]int
 	reservas map[string][]evento.ItemPedido
 
 	publicador Publicador
@@ -100,18 +90,16 @@ func (s *Servico) aoPedidoCriado(ctx context.Context, env evento.Envelope) error
 	})
 }
 
-// reservar faz a checagem e a baixa dentro de uma única seção crítica, para
-// dois pedidos concorrentes nunca reservarem a mesma última unidade.
+// reservar confere e baixa o estoque do pedido numa única seção crítica.
 //
-// Devolve nil quando reservou. Devolve o motivo preenchido quando não deu,
-// e nesse caso o estoque fica exatamente como estava.
+// Devolve nil quando reservou ou quando o pedido já estava reservado.
+// Devolve o motivo preenchido quando não deu, e nesse caso o estoque fica
+// exatamente como estava.
 func (s *Servico) reservar(pedido evento.DadosPedidoCriado) (*evento.DadosEstoqueIndisponivel, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if _, jaReservado := s.reservas[pedido.PedidoID]; jaReservado {
-		// O broker pode reentregar uma mensagem cujo ack se perdeu. Baixar
-		// o estoque de novo furaria a conta, então só reconfirmamos.
 		log.Printf("pedido %s já estava reservado, reentrega ignorada", pedido.PedidoID)
 		return nil, nil
 	}
@@ -123,8 +111,6 @@ func (s *Servico) reservar(pedido evento.DadosPedidoCriado) (*evento.DadosEstoqu
 		}, nil
 	}
 
-	// Soma as quantidades por produto antes de conferir, caso o mesmo item
-	// apareça em mais de uma linha do pedido.
 	necessario := make(map[string]int, len(pedido.Itens))
 	for _, item := range pedido.Itens {
 		if item.Quantidade <= 0 {
@@ -140,8 +126,6 @@ func (s *Servico) reservar(pedido evento.DadosPedidoCriado) (*evento.DadosEstoqu
 		necessario[item.ProdutoID] += item.Quantidade
 	}
 
-	// Confere tudo antes de baixar qualquer coisa: ou o pedido inteiro passa,
-	// ou o estoque não é tocado.
 	for _, produtoID := range idsOrdenados(necessario) {
 		quantidade := necessario[produtoID]
 
@@ -177,8 +161,6 @@ func (s *Servico) reservar(pedido evento.DadosPedidoCriado) (*evento.DadosEstoqu
 		s.saldo[produtoID] -= quantidade
 	}
 
-	// Guarda o que foi pedido, não o agregado, para o estorno devolver as
-	// mesmas linhas que entraram.
 	reservado := make([]evento.ItemPedido, len(pedido.Itens))
 	copy(reservado, pedido.Itens)
 	s.reservas[pedido.PedidoID] = reservado
@@ -187,9 +169,7 @@ func (s *Servico) reservar(pedido evento.DadosPedidoCriado) (*evento.DadosEstoqu
 }
 
 // aoPedidoExcluido devolve ao estoque o que havia sido reservado para o
-// pedido. O Principal publica pedido.excluido tanto quando o pagamento é
-// recusado quanto quando o estoque faltou; no segundo caso não há nada a
-// estornar, e é isso que o mapa de reservas resolve.
+// pedido. Sem reserva, não altera nada.
 func (s *Servico) aoPedidoExcluido(_ context.Context, env evento.Envelope) error {
 	var excluido evento.DadosPedidoExcluido
 	if err := env.DecodificarDados(&excluido); err != nil {

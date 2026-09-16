@@ -1,8 +1,5 @@
 // Package evento define o envelope comum a todos os eventos do sistema, os
 // nomes das exchanges e as routing keys usadas pelos microsserviços.
-//
-// Este pacote é o contrato entre os cinco microsserviços: qualquer mudança
-// aqui precisa ser combinada entre a dupla antes de valer.
 package evento
 
 import (
@@ -13,13 +10,8 @@ import (
 	"time"
 )
 
-// Nomes das exchanges declaradas no RabbitMQ.
-//
-// eCommerce é do tipo direct: a mensagem vai para as filas cuja binding key é
-// exatamente igual à routing key do evento.
-//
-// promocoes é do tipo topic: a binding key aceita os curingas * (exatamente
-// uma palavra) e # (zero ou mais palavras).
+// Nomes das exchanges declaradas no RabbitMQ: eCommerce é do tipo direct e
+// promocoes é do tipo topic.
 const (
 	ExchangeECommerce = "eCommerce"
 	ExchangePromocoes = "promocoes"
@@ -94,14 +86,10 @@ func NovoEnvelope(tipo, produtor string, dados any) (Envelope, error) {
 	}, nil
 }
 
-// BytesCanonicos devolve a representação determinística do evento, que é o
-// conteúdo hasheado e assinado. O campo Signature fica de fora justamente
-// porque ele é o resultado dessa operação.
-//
-// Produtor e consumidor precisam gerar exatamente os mesmos bytes, senão a
-// validação falha mesmo com a mensagem intacta. Por isso todos os campos são
-// strings e o payload é mantido como json.RawMessage: a ida e volta pelo
-// encoding/json preserva os bytes originais em vez de reserializar o objeto.
+// BytesCanonicos devolve a representação determinística do evento, sem o
+// campo Signature, que é o conteúdo hasheado e assinado. Produtor e
+// consumidor precisam chegar aos mesmos bytes, por isso Dados é mantido como
+// json.RawMessage.
 func (e Envelope) BytesCanonicos() ([]byte, error) {
 	semAssinatura := struct {
 		ID        string          `json:"id"`

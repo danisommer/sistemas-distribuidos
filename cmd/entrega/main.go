@@ -1,32 +1,8 @@
 // Comando entrega sobe o microsserviço de emissão de nota e expedição.
 //
-// ============================================================================
+//	go run ./cmd/entrega
 //
-//	PARTE DA DUPLA — ainda não implementado
-//
-// ============================================================================
-//
-// Responsabilidades, conforme o enunciado:
-//
-//	Consome na fila evento.FilaEntrega, vinculada à exchange
-//	evento.ExchangeECommerce com uma binding key:
-//	  - evento.PagamentoAprovado, payload evento.DadosPagamentoAprovado
-//	    (os itens do pedido vêm junto, para a nota)
-//
-//	Ao receber o evento: simula a emissão da nota fiscal e o preparo da
-//	entrega, e então publica
-//	  - evento.PedidoEnviado, payload evento.DadosPedidoEnviado
-//	    (número da nota, transportadora e código de rastreio)
-//
-// Use cmd/pagamento/main.go como modelo: ele também tem uma binding key só e
-// publica um evento em resposta. O chaveiro a carregar é o de
-// evento.ServicoEntrega.
-// Comando pagamento sobe o microsserviço de processamento de pagamentos.
-//
-//	go run ./cmd/pagamento
-//
-// Consome pedido.estoque_ok da exchange eCommerce e publica
-// pagamento.aprovado ou pagamento.recusado.
+// Consome pagamento.aprovado da exchange eCommerce e publica pedido.enviado.
 package main
 
 import (

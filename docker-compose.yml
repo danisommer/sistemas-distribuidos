@@ -4,15 +4,13 @@ services:
     container_name: sd-rabbitmq
     hostname: sd-rabbitmq
     ports:
-      # porta AMQP, usada pelos microsserviços
       - "5672:5672"
-      # painel web: http://localhost:15672 (guest / guest)
+      # painel web: http://localhost:15672
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
-      # mantém filas e mensagens persistentes entre reinícios do container
       - rabbitmq-dados:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]

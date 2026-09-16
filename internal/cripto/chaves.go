@@ -1,21 +1,13 @@
 // Package cripto concentra a geração, o armazenamento e o uso dos pares de
 // chaves RSA que assinam e validam os eventos.
 //
-// Divisão do trabalho na dupla:
-//   - assinar.go   → geração da assinatura digital
-//   - verificar.go → validação da assinatura
-//
 // Layout em disco, montado pelo comando cmd/gerar-chaves:
 //
 //	chaves/
-//	  estoque/
-//	    privada.pem            ← só este processo pode ler
+//	  <servico>/
+//	    privada.pem
 //	    publicas/
-//	      principal.pem        ← chave pública dos demais microsserviços
-//	      pagamento.pem
-//	      entrega.pem
-//	      promocoes.pem
-//	      estoque.pem
+//	      <servico>.pem
 package cripto
 
 import (
@@ -29,8 +21,7 @@ import (
 	"strings"
 )
 
-// TamanhoChaveBits é o tamanho das chaves RSA geradas. 2048 bits é o mínimo
-// considerado seguro hoje e é rápido o bastante para assinar cada evento.
+// TamanhoChaveBits é o tamanho das chaves RSA geradas.
 const TamanhoChaveBits = 2048
 
 // Nomes dos arquivos dentro da pasta de cada microsserviço.
@@ -60,9 +51,7 @@ func SalvarPrivada(caminho string, chave *rsa.PrivateKey) error {
 	return gravar(caminho, pem.EncodeToMemory(bloco), 0o600)
 }
 
-// SalvarPublica grava a chave pública em PEM, no formato PKIX. É o formato
-// que Python e Java também leem, caso a dupla queira conferir a assinatura
-// com outra ferramenta.
+// SalvarPublica grava a chave pública em PEM, no formato PKIX.
 func SalvarPublica(caminho string, chave *rsa.PublicKey) error {
 	der, err := x509.MarshalPKIXPublicKey(chave)
 	if err != nil {
@@ -72,15 +61,14 @@ func SalvarPublica(caminho string, chave *rsa.PublicKey) error {
 	return gravar(caminho, pem.EncodeToMemory(bloco), 0o644)
 }
 
-// CarregarPrivada lê uma chave privada RSA de um arquivo PEM.
+// CarregarPrivada lê uma chave privada RSA de um arquivo PEM, em PKCS#8 ou
+// PKCS#1.
 func CarregarPrivada(caminho string) (*rsa.PrivateKey, error) {
 	der, err := lerBlocoPEM(caminho)
 	if err != nil {
 		return nil, err
 	}
 
-	// Aceita PKCS#8 (o formato que gravamos) e PKCS#1, para o caso de a
-	// chave ter sido gerada por fora, com openssl antigo.
 	if qualquer, err := x509.ParsePKCS8PrivateKey(der); err == nil {
 		rsaKey, ok := qualquer.(*rsa.PrivateKey)
 		if !ok {
@@ -178,9 +166,8 @@ func lerChaveiroPublico(raiz, servico string) (map[string]*rsa.PublicKey, error)
 	return publicas, nil
 }
 
-// PublicaDe devolve a chave pública do microsserviço produtor. Um produtor
-// desconhecido é erro: sem a chave pública não há como validar nada, e o
-// evento tem de ser descartado.
+// PublicaDe devolve a chave pública do microsserviço produtor, ou erro se
+// ela não estiver no chaveiro.
 func (c *Chaveiro) PublicaDe(servico string) (*rsa.PublicKey, error) {
 	chave, ok := c.Publicas[servico]
 	if !ok {

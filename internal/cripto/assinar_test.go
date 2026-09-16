@@ -14,11 +14,6 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Os testes conferem a assinatura chamando rsa.VerifyPKCS1v15 direto, sem
-// passar por cripto.Verificar. Assim eles valem desde já, enquanto a
-// validação ainda é um stub, e continuam valendo depois como referência do
-// que a implementação da dupla precisa reproduzir.
-
 var (
 	umaVez     sync.Once
 	chaveTeste *rsa.PrivateKey
@@ -53,7 +48,6 @@ func envelopeDeTeste(t *testing.T) evento.Envelope {
 	return env
 }
 
-// conferir repete na mão o que a validação precisa fazer.
 func conferir(t *testing.T, publica *rsa.PublicKey, env evento.Envelope) error {
 	t.Helper()
 
@@ -84,10 +78,6 @@ func TestAssinaturaDeEventoEValida(t *testing.T) {
 	}
 }
 
-// Este é o teste que importa para o sistema funcionar: o consumidor recebe o
-// envelope como JSON e precisa remontar exatamente os mesmos bytes que o
-// produtor assinou. Se a ida e volta mudar um byte, a validação falha mesmo
-// com a mensagem intacta.
 func TestAssinaturaSobreviveAoTransporteJSON(t *testing.T) {
 	privada := chave(t)
 	env := envelopeDeTeste(t)
@@ -101,7 +91,6 @@ func TestAssinaturaSobreviveAoTransporteJSON(t *testing.T) {
 		t.Fatalf("bytes canônicos do produtor: %v", err)
 	}
 
-	// Simula o caminho pelo broker: serializa, trafega, desserializa.
 	corpo, err := json.Marshal(env)
 	if err != nil {
 		t.Fatalf("serializando envelope: %v", err)

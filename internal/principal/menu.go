@@ -14,12 +14,8 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// Menu é a interação com o usuário pelo terminal.
-//
-// Ele roda na goroutine principal enquanto o consumidor roda em paralelo, e
-// os dois escrevem na mesma tela. Por isso toda escrita passa pelo mutex
-// daqui: sem ele, um aviso de mudança de status chegando no meio de uma
-// tabela cortaria a linha ao meio.
+// Menu é a interação com o usuário pelo terminal. Toda escrita na tela passa
+// pelo mutex, pois Avisar é chamado pelo consumidor em paralelo.
 type Menu struct {
 	mu     sync.Mutex
 	saida  io.Writer
@@ -92,8 +88,6 @@ func (m *Menu) Rodar(ctx context.Context) error {
 			m.imprimir("\nAté mais.\n")
 			return nil
 		case "":
-			// Enter sozinho redesenha o menu, que é o jeito de limpar a tela
-			// depois de um aviso de status ter chegado por cima do prompt.
 		default:
 			m.imprimir("\nOpção inválida.\n")
 		}
@@ -129,8 +123,6 @@ func (m *Menu) realizarPedido(ctx context.Context) error {
 	m.mostrarProdutos()
 	m.imprimir("\nMonte o pedido. Deixe o produto em branco para fechar.\n\n")
 
-	// quantidades por produto, para o mesmo item escolhido duas vezes somar
-	// em vez de virar duas linhas.
 	quantidades := make(map[string]int)
 	var ordem []string
 
@@ -345,10 +337,6 @@ func resumoDoPedido(itens []evento.ItemPedido) string {
 
 // preencher completa o texto com espaços até a largura pedida, contando
 // caracteres e não bytes.
-//
-// O %-22s do fmt conta bytes, e em UTF-8 cada acento ocupa dois. Sem isto,
-// "Teclado mecânico" fica com uma coluna a menos que os nomes sem acento e a
-// tabela sai torta.
 func preencher(texto string, largura int) string {
 	faltam := largura - utf8.RuneCountInString(texto)
 	if faltam <= 0 {

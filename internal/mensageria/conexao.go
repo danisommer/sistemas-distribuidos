@@ -1,4 +1,4 @@
-// Package mensageria envolve o cliente AMQP e concentra tudo que os cinco
+// Package mensageria envolve o cliente AMQP e concentra tudo que os
 // microsserviços fazem igual: conectar no broker, declarar as exchanges,
 // publicar eventos já assinados e consumir eventos validando a assinatura.
 package mensageria
@@ -14,7 +14,7 @@ import (
 )
 
 // Conexao é a conexão TCP com o broker mais o canal AMQP por onde passam os
-// comandos. Um canal só já basta para a carga deste trabalho.
+// comandos.
 type Conexao struct {
 	conn  *amqp.Connection
 	Canal *amqp.Channel
@@ -37,10 +37,7 @@ func DiretorioChaves() string {
 	return "chaves"
 }
 
-// Conectar abre a conexão e o canal, tentando de novo por até um minuto. A
-// espera existe porque o container do RabbitMQ leva alguns segundos para
-// aceitar conexões depois de subir, e sem isso todo serviço iniciado junto
-// com o broker morreria na largada.
+// Conectar abre a conexão e o canal, tentando de novo por até um minuto.
 func Conectar(url string) (*Conexao, error) {
 	const tentativas = 20
 	const intervalo = 3 * time.Second
@@ -65,11 +62,8 @@ func Conectar(url string) (*Conexao, error) {
 	return nil, fmt.Errorf("não consegui conectar em %s: %w", url, ultimoErro)
 }
 
-// DeclararExchanges cria as duas exchanges do trabalho, se ainda não
-// existirem. Todo processo chama isto na partida, então a ordem de subida
-// dos microsserviços não importa.
-//
-// As duas são durable: sobrevivem a um restart do broker.
+// DeclararExchanges cria as exchanges do sistema como durable, se ainda não
+// existirem.
 func (c *Conexao) DeclararExchanges() error {
 	exchanges := []struct {
 		nome string

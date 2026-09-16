@@ -1,12 +1,7 @@
-// Comando observador é uma FERRAMENTA DE DESENVOLVIMENTO, não faz parte da
-// entrega. Ele escuta todos os eventos da exchange eCommerce e imprime cada
-// um, para acompanhar o fluxo enquanto o microsserviço Principal não existe.
+// Comando observador é uma ferramenta de desenvolvimento: escuta todos os
+// eventos da exchange eCommerce, numa fila própria, e imprime cada um.
 //
 //	go run ./cmd/observador
-//
-// A fila dele é separada das filas dos microsserviços, então observar não
-// rouba mensagem de ninguém: na exchange direct, cada fila vinculada à mesma
-// routing key recebe a sua própria cópia.
 package main
 
 import (
@@ -37,8 +32,6 @@ func main() {
 }
 
 func executar(ctx context.Context) error {
-	// Usa o chaveiro do Principal só porque ele já tem a chave pública de
-	// todo mundo, que é o necessário para validar qualquer evento.
 	chaveiro, err := cripto.CarregarChaveiro(mensageria.DiretorioChaves(), evento.ServicoPrincipal)
 	if err != nil {
 		return err

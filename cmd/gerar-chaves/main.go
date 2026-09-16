@@ -35,7 +35,6 @@ func main() {
 func executar(raiz string, forcar bool) error {
 	publicas := make(map[string]*rsa.PublicKey, len(evento.Servicos))
 
-	// Passo 1: cada microsserviço ganha (ou recupera) o seu par de chaves.
 	for _, servico := range evento.Servicos {
 		caminho := filepath.Join(raiz, servico, cripto.ArquivoPrivada)
 
@@ -46,8 +45,6 @@ func executar(raiz string, forcar bool) error {
 		publicas[servico] = &privada.PublicKey
 	}
 
-	// Passo 2: todo microsserviço recebe as chaves públicas de todos. Sem
-	// isso ele não consegue validar a assinatura do que consome.
 	for _, dono := range evento.Servicos {
 		pasta := filepath.Join(raiz, dono, cripto.PastaPublicas)
 

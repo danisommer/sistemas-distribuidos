@@ -56,8 +56,6 @@ func executar(ctx context.Context) error {
 		return err
 	}
 
-	// Exchange direct: a binding key tem de bater exatamente com a routing
-	// key do evento.
 	err = consumidor.Vincular(evento.ExchangeECommerce,
 		evento.PedidoCriado,
 		evento.PedidoExcluido,

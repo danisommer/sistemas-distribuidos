@@ -9,9 +9,7 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// No Principal de verdade o menu e o consumidor rodam ao mesmo tempo: o
-// usuário cria pedidos enquanto os eventos chegam e mudam status. Este teste
-// reproduz isso para o -race ter o que olhar.
+// Rodar com o detector de corrida:
 //
 //	go test -race ./internal/principal/
 func TestRegistroAguentaMenuEConsumidorAoMesmoTempo(t *testing.T) {
@@ -20,12 +18,10 @@ func TestRegistroAguentaMenuEConsumidorAoMesmoTempo(t *testing.T) {
 
 	const pedidosPorGoroutine = 50
 
-	// Cria pedidos e guarda os IDs para o outro lado atualizar.
 	ids := make(chan string, pedidosPorGoroutine*2)
 
 	var grupo sync.WaitGroup
 
-	// Dois "menus" criando pedidos.
 	for i := 0; i < 2; i++ {
 		grupo.Add(1)
 		go func() {
@@ -44,7 +40,6 @@ func TestRegistroAguentaMenuEConsumidorAoMesmoTempo(t *testing.T) {
 		close(ids)
 	}()
 
-	// Um "consumidor" atualizando status e dois leitores listando.
 	var consumo sync.WaitGroup
 	consumo.Add(3)
 
@@ -82,9 +77,6 @@ func TestRegistroAguentaMenuEConsumidorAoMesmoTempo(t *testing.T) {
 	}
 }
 
-// O menu escreve na tela ao mesmo tempo que o consumidor imprime aviso de
-// mudança de status. O mutex do menu é o que impede uma linha de cortar a
-// outra no meio.
 func TestMenuEAvisoNaoSeAtropelamNaTela(t *testing.T) {
 	registro := NovoRegistro()
 	var tela strings.Builder

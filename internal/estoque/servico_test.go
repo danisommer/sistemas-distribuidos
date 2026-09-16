@@ -7,8 +7,6 @@ import (
 	"ecommerce/internal/evento"
 )
 
-// publicadorFalso guarda o que o serviço publicaria, em vez de falar com o
-// broker. É o que permite testar toda a regra de estoque sem RabbitMQ.
 type publicadorFalso struct {
 	publicados []publicado
 }
@@ -83,7 +81,6 @@ func exigirSaldo(t *testing.T, s *Servico, produtoID string, esperado int) {
 func TestPedidoDisponivelBaixaEstoqueEPublicaEstoqueOK(t *testing.T) {
 	s, pub := montar(t)
 
-	// P001 começa com 10 e P004 com 15.
 	tratar(t, s, pedidoCriado(t, "PED-1", item("P001", 2), item("P004", 3)))
 
 	if chave := pub.ultimo(t).chave; chave != evento.PedidoEstoqueOK {
@@ -96,7 +93,6 @@ func TestPedidoDisponivelBaixaEstoqueEPublicaEstoqueOK(t *testing.T) {
 func TestPedidoAcimaDoEstoquePublicaIndisponivelESemBaixa(t *testing.T) {
 	s, pub := montar(t)
 
-	// P006 (Air Fryer) começa com 8.
 	tratar(t, s, pedidoCriado(t, "PED-2", item("P006", 99)))
 
 	ultimo := pub.ultimo(t)
@@ -114,8 +110,6 @@ func TestPedidoAcimaDoEstoquePublicaIndisponivelESemBaixa(t *testing.T) {
 	exigirSaldo(t, s, "P006", 8)
 }
 
-// Um pedido só pode ser reservado inteiro. Se o segundo item falta, o
-// primeiro não pode ter sido baixado.
 func TestPedidoParcialmenteDisponivelNaoBaixaNada(t *testing.T) {
 	s, _ := montar(t)
 
@@ -125,8 +119,6 @@ func TestPedidoParcialmenteDisponivelNaoBaixaNada(t *testing.T) {
 	exigirSaldo(t, s, "P006", 8)
 }
 
-// O mesmo produto em duas linhas tem de ser somado antes da checagem, senão
-// duas linhas de 6 passariam num estoque de 10.
 func TestMesmoProdutoEmDuasLinhasSomaAntesDeConferir(t *testing.T) {
 	s, pub := montar(t)
 
@@ -169,8 +161,6 @@ func TestPedidoSemItensEIndisponivel(t *testing.T) {
 	}
 }
 
-// O broker reentrega uma mensagem cujo ack se perdeu. A segunda entrega não
-// pode baixar o estoque de novo.
 func TestReentregaDoMesmoPedidoNaoBaixaDuasVezes(t *testing.T) {
 	s, _ := montar(t)
 
@@ -193,9 +183,6 @@ func TestPedidoExcluidoDevolveAoEstoque(t *testing.T) {
 	exigirSaldo(t, s, "P007", 100)
 }
 
-// Este é o caso que justifica o mapa de reservas. Um pedido cancelado por
-// falta de estoque gera pedido.excluido, mas nunca reservou nada: devolver
-// aqui criaria unidades do nada.
 func TestPedidoExcluidoSemReservaNaoCriaEstoque(t *testing.T) {
 	s, _ := montar(t)
 
