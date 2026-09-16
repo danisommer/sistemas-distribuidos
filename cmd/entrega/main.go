@@ -74,7 +74,7 @@ func executar(ctx context.Context) error {
 	publicador := mensageria.NovoPublicador(conexao, chaveiro)
 	servico := entrega.NovoServico(publicador)
 
-	consumidor, err := mensageria.NovoConsumidor(conexao, evento.FilaPagamento, chaveiro)
+	consumidor, err := mensageria.NovoConsumidor(conexao, evento.FilaEntrega, chaveiro)
 	if err != nil {
 		return err
 	}
