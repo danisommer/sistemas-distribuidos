@@ -56,7 +56,7 @@ func main() {
 }
 
 func executar(ctx context.Context) error {
-	chaveiro, err := cripto.CarregarChaveiro(mensageria.DiretorioChaves(), evento.ServicoPagamento)
+	chaveiro, err := cripto.CarregarChaveiro(mensageria.DiretorioChaves(), evento.ServicoEntrega)
 	if err != nil {
 		return err
 	}

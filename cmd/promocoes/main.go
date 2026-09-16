@@ -34,13 +34,13 @@ import (
 	"syscall"
 
 	"ecommerce/internal/cripto"
-	"ecommerce/internal/entrega"
 	"ecommerce/internal/evento"
 	"ecommerce/internal/mensageria"
+	"ecommerce/internal/promocoes"
 )
 
 func main() {
-	log.SetPrefix("[entrega] ")
+	log.SetPrefix("[promocoes] ")
 	log.SetFlags(log.Ltime)
 
 	ctx, parar := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -53,7 +53,7 @@ func main() {
 }
 
 func executar(ctx context.Context) error {
-	chaveiro, err := cripto.CarregarChaveiro(mensageria.DiretorioChaves(), evento.ServicoPagamento)
+	chaveiro, err := cripto.CarregarChaveiro(mensageria.DiretorioChaves(), evento.ServicoPromocoes)
 	if err != nil {
 		return err
 	}
@@ -69,16 +69,7 @@ func executar(ctx context.Context) error {
 	}
 
 	publicador := mensageria.NovoPublicador(conexao, chaveiro)
-	servico := entrega.NovoServico(publicador)
+	servico := promocoes.NovoServico(publicador)
 
-	consumidor, err := mensageria.NovoConsumidor(conexao, evento.FilaPagamento, chaveiro)
-	if err != nil {
-		return err
-	}
-
-	if err := consumidor.Vincular(evento.ExchangeECommerce, evento.PagamentoAprovado); err != nil {
-		return err
-	}
-
-	return consumidor.Consumir(ctx, servico.Tratar)
+	return servico.EnviarPromocoes(ctx)
 }

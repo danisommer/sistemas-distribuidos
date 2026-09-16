@@ -76,8 +76,8 @@ type DadosPromocao struct {
 	ProdutoID string  `json:"produto_id"`
 	Nome      string  `json:"nome"`
 	Categoria string  `json:"categoria"`
-	PrecoDe   float64 `json:"preco_de"`
-	PrecoPor  float64 `json:"preco_por"`
+	PrecoDe   float32 `json:"preco_de"`
+	PrecoPor  float32 `json:"preco_por"`
 	Desconto  int     `json:"desconto_percentual"`
 	ValidaAte string  `json:"valida_ate"`
 }

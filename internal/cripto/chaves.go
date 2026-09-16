@@ -130,6 +130,28 @@ func CarregarChaveiro(raiz, servico string) (*Chaveiro, error) {
 		return nil, fmt.Errorf("chaveiro de %s: %w (rode: go run ./cmd/gerar-chaves)", servico, err)
 	}
 
+	publicas, err := lerChaveiroPublico(raiz, servico)
+
+	if err != nil {
+		return nil, fmt.Errorf("falha ao ler chaveiro publico de %s: %w (rode: go run ./cmd/gerar-chaves)", servico, err)
+	}
+
+	return &Chaveiro{Servico: servico, Privada: privada, Publicas: publicas}, nil
+}
+
+func CarregarChaveiroPublico(raiz, servico string) (*Chaveiro, error) {
+	publicas, err := lerChaveiroPublico(raiz, servico)
+
+	if err != nil {
+		return nil, fmt.Errorf("falha ao ler chaveiro publico de %s: %w (rode: go run ./cmd/gerar-chaves)", servico, err)
+	}
+
+	return &Chaveiro{Servico: servico, Privada: nil, Publicas: publicas}, nil
+}
+
+func lerChaveiroPublico(raiz, servico string) (map[string]*rsa.PublicKey, error) {
+	base := filepath.Join(raiz, servico)
+
 	pastaPublicas := filepath.Join(base, PastaPublicas)
 	entradas, err := os.ReadDir(pastaPublicas)
 	if err != nil {
@@ -153,7 +175,7 @@ func CarregarChaveiro(raiz, servico string) (*Chaveiro, error) {
 		return nil, fmt.Errorf("chaveiro de %s: nenhuma chave pública em %s", servico, pastaPublicas)
 	}
 
-	return &Chaveiro{Servico: servico, Privada: privada, Publicas: publicas}, nil
+	return publicas, nil
 }
 
 // PublicaDe devolve a chave pública do microsserviço produtor. Um produtor

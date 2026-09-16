@@ -43,7 +43,7 @@ func (s *Servico) Tratar(ctx context.Context, env evento.Envelope) error {
 
 	var payload evento.DadosPagamentoAprovado
 
-	if err := env.DecodificarDados(payload); err != nil {
+	if err := env.DecodificarDados(&payload); err != nil {
 		return fmt.Errorf("Falha ao lidar com evento de PagamentoAprovado. %w", err)
 	}
 

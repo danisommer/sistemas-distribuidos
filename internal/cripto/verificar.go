@@ -1,8 +1,12 @@
 package cripto
 
 import (
+	"crypto"
 	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
+	"fmt"
 
 	"ecommerce/internal/evento"
 )
@@ -28,7 +32,6 @@ import (
 // ele existir, rodar com VERIFICAR_ASSINATURA=on faz todo evento ser
 // descartado, o que é o comportamento correto: sem validação não dá para
 // confiar em nada que chega.
-var ErrNaoImplementado = errors.New("validação de assinatura ainda não implementada (internal/cripto/verificar.go)")
 
 // Verificar confere se assinaturaBase64 foi mesmo produzida pela chave
 // privada correspondente a publica, sobre o conteúdo informado.
@@ -44,7 +47,19 @@ func Verificar(publica *rsa.PublicKey, conteudo []byte, assinaturaBase64 string)
 		return errors.New("evento sem assinatura")
 	}
 
-	return ErrNaoImplementado
+	assinaturaBytes, err := base64.StdEncoding.DecodeString(assinaturaBase64)
+
+	if err != nil {
+		return fmt.Errorf("falha ao decodificar assinatura: %w", err)
+	}
+
+	resumo := sha256.Sum256(conteudo)
+
+	if err := rsa.VerifyPKCS1v15(publica, crypto.SHA256, resumo[:], assinaturaBytes); err != nil {
+		return fmt.Errorf("falha ao verificar assinatura: %w", err)
+	}
+
+	return nil
 }
 
 // VerificarEnvelope é o caminho completo da validação de um evento recebido:

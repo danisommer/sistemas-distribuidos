@@ -2,6 +2,7 @@ package promocoes
 
 import (
 	"context"
+	"ecommerce/internal/evento"
 	"fmt"
 	"math/rand/v2"
 	"time"
@@ -16,7 +17,7 @@ const (
 )
 
 type publicador interface {
-	PublicarECommerce(ctx context.Context, routingKey string, dados any) error
+	PublicarPromocao(ctx context.Context, categoria string, dados any) error
 }
 
 type Produto struct {
@@ -70,16 +71,31 @@ func (s *Servico) enviar(ctx context.Context) error {
 	produtoPromocao := produtos[rand.IntN(len(produtos))]
 	descontoPorcentagem := s.gerarDesconto(DESCONTO_MIN, DESCONTO_MAX)
 	validadeDesconto := s.gerarValidadeDescontoUTC()
-	valorDesconto := produtoPromocao.Preco * float32(descontoPorcentagem)
+	valorDesconto := produtoPromocao.Preco * float32(100-descontoPorcentagem) / 100
 
+	dadosPromocao := evento.DadosPromocao{
+		ProdutoID: produtoPromocao.ID,
+		Nome:      produtoPromocao.Nome,
+		Categoria: produtoPromocao.Categoria,
+		PrecoDe:   produtoPromocao.Preco,
+		PrecoPor:  valorDesconto,
+		Desconto:  descontoPorcentagem,
+		ValidaAte: validadeDesconto,
+	}
+
+	if err := s.publicador.PublicarPromocao(ctx, dadosPromocao.Categoria, dadosPromocao); err != nil {
+		return fmt.Errorf("Falhar ao publicar mensagem no broker. %w", err)
+	}
+
+	return nil
 }
 
 func (s *Servico) obterDuracaoAleatoriaEmMs(min int, max int) time.Duration {
 	return time.Duration((min + rand.IntN(max-min))) * time.Millisecond
 }
 
-func (s *Servico) gerarDesconto(min int, max int) float32 {
-	return float32((min + rand.IntN(max-min))) / 100
+func (s *Servico) gerarDesconto(min int, max int) int {
+	return (min + rand.IntN(max-min))
 }
 
 func (s *Servico) gerarValidadeDescontoUTC() string {

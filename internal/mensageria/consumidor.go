@@ -3,7 +3,6 @@ package mensageria
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -135,19 +134,14 @@ func (c *Consumidor) Consumir(ctx context.Context, tratar Tratador) error {
 func (c *Consumidor) processar(ctx context.Context, entrega amqp.Delivery, tratar Tratador) {
 	var env evento.Envelope
 	if err := json.Unmarshal(entrega.Body, &env); err != nil {
-		registro.Printf("✗ mensagem ilegível na fila %s, DESCARTADA: %v", c.fila, err)
+		registro.Printf("mensagem ilegível na fila %s, DESCARTADA: %v", c.fila, err)
 		entrega.Nack(false, false)
 		return
 	}
 
 	if c.verificar {
 		if err := cripto.VerificarEnvelope(c.chaveiro, env); err != nil {
-			if errors.Is(err, cripto.ErrNaoImplementado) {
-				registro.Printf("✗ evento %s DESCARTADO: %v", env.Tipo, err)
-				registro.Printf("  (para testar sem validação enquanto isso: VERIFICAR_ASSINATURA=off)")
-			} else {
-				registro.Printf("✗ assinatura inválida no evento %s vindo de %q, DESCARTADO: %v", env.Tipo, env.Produtor, err)
-			}
+			registro.Printf("assinatura inválida no evento %s vindo de %q, DESCARTADO: %v", env.Tipo, env.Produtor, err)
 			entrega.Nack(false, false)
 			return
 		}
@@ -156,7 +150,7 @@ func (c *Consumidor) processar(ctx context.Context, entrega amqp.Delivery, trata
 	registro.Printf("← recebido %s (evento %s, produtor %s)", env.Tipo, env.ID, env.Produtor)
 
 	if err := tratar(ctx, env); err != nil {
-		registro.Printf("✗ erro tratando %s (evento %s): %v", env.Tipo, env.ID, err)
+		registro.Printf("erro tratando %s (evento %s): %v", env.Tipo, env.ID, err)
 		entrega.Nack(false, false)
 		return
 	}

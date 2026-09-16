@@ -48,11 +48,12 @@ func ChavePromocao(categoria string) string {
 // Nomes dos microsserviços. O nome identifica o produtor do evento e também a
 // pasta de chaves usada por ele, em chaves/<nome>.
 const (
-	ServicoPrincipal = "principal"
-	ServicoEstoque   = "estoque"
-	ServicoPagamento = "pagamento"
-	ServicoEntrega   = "entrega"
-	ServicoPromocoes = "promocoes"
+	ServicoPrincipal    = "principal"
+	ServicoEstoque      = "estoque"
+	ServicoPagamento    = "pagamento"
+	ServicoEntrega      = "entrega"
+	ServicoPromocoes    = "promocoes"
+	ServicoConsumidores = "consumidores"
 )
 
 // Servicos lista todos os microsserviços que assinam eventos. É usada para
